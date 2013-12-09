@@ -1,3 +1,5 @@
+\section{AUCA/Core.lhs}
+
 \begin{code}
 {-# LANGUAGE RecordWildCards #-}
 

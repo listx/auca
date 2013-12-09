@@ -1,3 +1,5 @@
+\section{auca.lhs}
+
 \begin{code}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE RecordWildCards #-}
