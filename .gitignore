@@ -1,0 +1,11 @@
+*.o
+*.hi
+
+*.aux
+*.log
+*.out
+*.pdf
+*.toc
+
+auca
+doc/watch
