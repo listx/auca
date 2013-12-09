@@ -24,7 +24,7 @@ eventHandler comDef Modified{..}
 		putStr $ ": " ++ colorize Magenta "change detected"
 		putStrLn $ "; executing command " ++ squote (colorize Blue comDef)
 		runCom $ cmd comDef
-eventHandler _ _ = putStrLn "Non-modification event" >> return ()
+eventHandler _ ev = putStrLn ("Event: " ++ show ev) >> return ()
 
 keyHandler :: Opts -> String -> FilePath -> [WatchDescriptor] -> IO ()
 keyHandler o@Opts{..} comDef f wds = keyHandler' =<< getChar
