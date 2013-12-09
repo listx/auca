@@ -99,18 +99,6 @@ cmd com = CreateProcess
 	, close_fds = True
 	, create_group = False
 	}
-
-cmdQuiet :: String -> CreateProcess
-cmdQuiet com = CreateProcess
-	{ cmdspec = ShellCommand com
-	, cwd = Nothing
-	, env = Nothing
-	, std_in = CreatePipe
-	, std_out = CreatePipe
-	, std_err = Inherit
-	, close_fds = True
-	, create_group = False
-	}
 \end{code}
 
 \ct{runCom} and \ct{cmd} are the actual workhorses that spawn the external command defined by the user.
