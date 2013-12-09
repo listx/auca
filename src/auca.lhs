@@ -58,6 +58,8 @@ prog opts@Opts{..} filesToWatch = do
 		then (head command)
 		else command_simple ++ " " ++ (head filesToWatch)
 	inotify <- initINotify
+	putStrLn "\nFiles to watch:\n"
+	mapM_ putStrLn filesToWatch
 	wds <- mapM (\f -> addWatch inotify [Modify] f (eventHandler comDef)) filesToWatch
 	keyHandler opts comDef (head filesToWatch) wds -- loop to handle key presses
 \end{code}
