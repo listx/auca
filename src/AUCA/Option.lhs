@@ -21,18 +21,30 @@ data Opts = Opts
 
 progOpts :: Opts
 progOpts = Opts
-	{ command = def &= typ "COMMAND" &= help "command(s) to execute; up to 10 (hotkeyed to 1-0)"
-	, command_simple = def &= typ "COMMAND" &= name "C" &= help "command to execute; it takes the first file, and calls command after it; e.g., `-C lilypond -f foo.ly' will translate to `lilypond foo.ly' as the default command"
-	, file = def &= help "file(s) to watch; can be repeated multiple times to define multiple files"
-	, list = def &= help "list of files to watch"
-	, interval = 0 &= typ "SECONDS" &= help "sleep SECONDS amount of time and detect changes only on these intervals"
+	{ command = def &= typ "COMMAND"
+		&= help "command(s) to execute; up to 10 (hotkeyed to 1-0)"
+	, command_simple = def &= typ "COMMAND" &= name "C"
+		&= help "command to execute; it takes the first file, and calls command after\
+			\ it; e.g., `-C lilypond -f foo.ly' will translate to `lilypond foo.ly'\
+			\ as the default command"
+	, file = def
+		&= help "file(s) to watch; can be repeated multiple times to define multiple\
+			\ files"
+	, list = def
+		&= help "list of files to watch"
+	, interval = 0 &= typ "SECONDS"
+		&= help "sleep SECONDS amount of time and detect changes only on these intervals"
 	}
 	&= details
 		[ "Notes:"
 		, ""
 		, "  All commands are passed to the default shell."
 		]
+\end{code}
 
+\ct{progOpts} is the data structure that actually defines all options and also describes their help messages.
+
+\begin{code}
 getOpts :: IO Opts
 getOpts = cmdArgs $ progOpts
 	&= summary (_PROGRAM_INFO ++ ", " ++ _COPYRIGHT)
@@ -40,7 +52,12 @@ getOpts = cmdArgs $ progOpts
 	&= help _PROGRAM_DESC
 	&= helpArg [explicit, name "help", name "h"]
 	&= versionArg [explicit, name "version", name "v", summary _PROGRAM_INFO]
+\end{code}
 
+\ct{getOpts} is the custom IO action that gets the options from the environment.
+It also explicitly sets the `\ct{-h}' and `\ct{-v}' flags, to override the ones given by \ct{CmdArgs} (which define `\ct{-?}' as \ct{--help} and `\ct{-v}' as `\ct{--verbose}').
+
+\begin{code}
 helpMsg :: Opts -> FilePath -> IO ()
 helpMsg Opts{..} f = do
 	mapM_ showCom $ if null command
@@ -60,3 +77,6 @@ helpMsg Opts{..} f = do
 		then command_simple ++ " " ++ f
 		else head command
 \end{code}
+
+\ct{helpMsg} is the function that gets called if the user requests for help interactively by pressing the `\ct{h}' key.
+It is also displayed on startup.

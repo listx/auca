@@ -1,7 +1,11 @@
 \section{AUCA/Meta.lhs}
 
+This module mainly defines the metadata that comes with \ct{auca}.
+Of particular notice here is the version number definition.
+
 \begin{code}
 module AUCA.Meta where
+
 _PROGRAM_NAME
 	, _PROGRAM_VERSION
 	, _PROGRAM_INFO

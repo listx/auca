@@ -2,7 +2,18 @@
 
 `auca` automatically calls an external command based on one or more file modifications.
 
+#Dependencies
+
+##System
+
+- `sed` utility
+- Linux system (because of the use of inotify)
+
+##Haskell:
+
+- `hinotify` package from Hackage
+- `cmdargs` package
+
 #Install
 
 Get GHC and just run `make` in the `src/` folder to generate the `auca` binary.
-You also need the `hinotify` package from Hackage.

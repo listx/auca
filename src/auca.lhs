@@ -21,8 +21,6 @@ main :: IO ()
 main = do
 	hSetBuffering stdout NoBuffering
 	hSetBuffering stderr NoBuffering
-	hSetBuffering stdin NoBuffering
-	hSetEcho stdin False -- disable terminal echo
 	args' <- getArgs
 	opts@Opts{..} <- (if null args' then withArgs ["--help"] else id) $ getOpts
 	errNo <- argsCheck opts
@@ -38,20 +36,33 @@ main = do
 	let filesMaster = nub $ file ++ files
 	helpMsg opts (head filesMaster)
 	prog opts filesMaster
+\end{code}
 
+\ct{main} checks for various errors before passing control over to \ct{prog}.
+
+\begin{code}
 argsCheck :: Opts -> IO Int
 argsCheck Opts{..}
-	| null command && null command_simple = errMsgNum "--command or --command-simple must be defined" 1
+	| null command && null command_simple
+		= errMsgNum "--command or --command-simple must be defined" 1
 	| null file && null list = errMsgNum "either --file or --list must be defined" 1
 	| otherwise = return 0
+\end{code}
 
+\ct{argsCheck} rejects any obviously illegal arguments.
+
+\begin{code}
 -- Verify that the --file and --list arguments actually make sense.
 filesCheck :: [Bool] -> [Bool] -> IO Int
 filesCheck fs flist
 	| any (==False) fs = errMsgNum "an argument to --file does not exist" 1
 	| any (==False) flist = errMsgNum "a file defined in --list does not exist" 1
 	| otherwise = return 0
+\end{code}
 
+\ct{filesCheck} makes sure that all files defined by the user actually exist in the filesystem.
+
+\begin{code}
 prog :: Opts -> [FilePath] -> IO ()
 prog opts@Opts{..} filesToWatch = do
 	let comDef = if null command_simple
@@ -61,5 +72,12 @@ prog opts@Opts{..} filesToWatch = do
 	putStrLn "\nFiles to watch:\n"
 	mapM_ putStrLn filesToWatch
 	wds <- mapM (\f -> addWatch inotify [Modify] f (eventHandler comDef)) filesToWatch
+	hSetBuffering stdin NoBuffering
+	hSetEcho stdin False -- disable terminal echo
 	keyHandler opts comDef (head filesToWatch) wds -- loop to handle key presses
 \end{code}
+
+\ct{prog} initializes the \ct{inotify} API provided by the Linux kernel.
+We simply tell the API to check for any file modifications on the list of files in \ct{filesToWatch}.
+We then move on and enter into \ct{keyHandler}, a simple loop that checks for manual key presses by the user.
+The calls to disable buffering on STDIN allow \ct{keyHandler} to detect individual key presses at a time.

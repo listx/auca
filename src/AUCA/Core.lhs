@@ -1,5 +1,8 @@
 \section{AUCA/Core.lhs}
 
+There are two main functions here --- \ct{eventHandler} and \ct{keyHandler}.
+\ct{eventHandler} hooks into the \ct{inotify} API for executing arbitrary commands, and \ct{keyHandler} handles all interactive key presses by the user.
+
 \begin{code}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -17,7 +20,8 @@ import AUCA.Util
 -- modifications or paths that do not exist).
 eventHandler :: String -> Event -> IO ()
 eventHandler comDef Modified{..}
-	| isDirectory || isJust maybeFilePath = putStrLn "Directory modification" >> return ()
+	| isDirectory || isJust maybeFilePath
+		= putStrLn "Directory modification" >> return ()
 	| otherwise = do
 		putStrLn []
 		showTime
@@ -25,7 +29,12 @@ eventHandler comDef Modified{..}
 		putStrLn $ "; executing command " ++ squote (colorize Blue comDef)
 		runCom $ cmd comDef
 eventHandler _ ev = putStrLn ("Event: " ++ show ev) >> return ()
+\end{code}
 
+We only execute the given command when the detected event is a \textit{modification} event of a \ct{file}.
+We ignore all other types of events, but print out info messages to tell the user what happened.
+
+\begin{code}
 keyHandler :: Opts -> String -> FilePath -> [WatchDescriptor] -> IO ()
 keyHandler o@Opts{..} comDef f wds = keyHandler' =<< getChar
 	where
@@ -63,7 +72,12 @@ keyHandler o@Opts{..} comDef f wds = keyHandler' =<< getChar
 		else zip (map show [(1::Int)..10]) command
 	comKeys :: String
 	comKeys = concatMap show [(0::Int)..9]
+\end{code}
 
+\ct{keyHandler} handles single key presses by the user.
+The \ct{comHash} and \ct{comKeys} structures define the hotkeys available to the user if multiple commands were defined.
+
+\begin{code}
 runCom :: CreateProcess -> IO ()
 runCom com = do
 	(_, _, _, p) <- createProcess com
@@ -98,3 +112,5 @@ cmdQuiet com = CreateProcess
 	, create_group = False
 	}
 \end{code}
+
+\ct{runCom} and \ct{cmd} are the actual workhorses that spawn the external command defined by the user.
