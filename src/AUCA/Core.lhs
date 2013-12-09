@@ -15,15 +15,14 @@ import AUCA.Util
 -- modifications or paths that do not exist).
 eventHandler :: String -> Event -> IO ()
 eventHandler comDef Modified{..}
-	| isDirectory = return ()
-	| isNothing maybeFilePath = return ()
+	| isDirectory || isJust maybeFilePath = putStrLn "Directory modification" >> return ()
 	| otherwise = do
 		putStrLn []
 		showTime
 		putStr $ ": " ++ colorize Magenta "change detected"
 		putStrLn $ "; executing command " ++ squote (colorize Blue comDef)
 		runCom $ cmd comDef
-eventHandler _ _ = return ()
+eventHandler _ _ = putStrLn "Non-modification event" >> return ()
 
 keyHandler :: Opts -> String -> FilePath -> [WatchDescriptor] -> IO ()
 keyHandler o@Opts{..} comDef f wds = keyHandler' =<< getChar
