@@ -114,3 +114,4 @@ cmdQuiet com = CreateProcess
 \end{code}
 
 \ct{runCom} and \ct{cmd} are the actual workhorses that spawn the external command defined by the user.
+The output of the external command is colorized using the \ct{sed} stream editor.
