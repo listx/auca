@@ -4,15 +4,15 @@
 
 #Dependencies
 
-##System
+###System
 
 - `sed` utility
 - Linux system (because of the use of inotify)
 
-##Haskell:
+###Haskell packages from Hackage
 
-- `hinotify` package from Hackage
-- `cmdargs` package
+- `hinotify`
+- `cmdargs`
 
 #Install
 
