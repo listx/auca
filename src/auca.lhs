@@ -71,7 +71,7 @@ prog opts@Opts{..} filesToWatch = do
 	inotify <- initINotify
 	putStrLn "\nFiles to watch:\n"
 	mapM_ putStrLn filesToWatch
-	wds <- mapM (\f -> addWatch inotify [Modify] f (eventHandler comDef)) filesToWatch
+	wds <- mapM (\f -> addWatch inotify [Modify] f (eventHandler comDef f)) filesToWatch
 	hSetBuffering stdin NoBuffering
 	hSetEcho stdin False -- disable terminal echo
 	keyHandler opts comDef (head filesToWatch) wds -- loop to handle key presses

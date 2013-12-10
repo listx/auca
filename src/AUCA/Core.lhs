@@ -18,17 +18,17 @@ import AUCA.Util
 
 -- Only run the given command on a file modification event (ignore directory
 -- modifications or paths that do not exist).
-eventHandler :: String -> Event -> IO ()
-eventHandler comDef Modified{..}
+eventHandler :: String -> FilePath -> Event -> IO ()
+eventHandler comDef fp Modified{..}
 	| isDirectory || isJust maybeFilePath
 		= putStrLn "Directory modification" >> return ()
 	| otherwise = do
 		putStrLn []
 		showTime
-		putStr $ ": " ++ colorize Magenta "change detected"
+		putStr $ ": " ++ colorize Magenta "change detected on file " ++ squote fp
 		putStrLn $ "; executing command " ++ squote (colorize Blue comDef)
 		runCom $ cmd comDef
-eventHandler _ ev = putStrLn ("Event: " ++ show ev) >> return ()
+eventHandler _ fp ev = putStrLn ("File: " ++ fp ++ " Event: " ++ show ev) >> return ()
 \end{code}
 
 We only execute the given command when the detected event is a \textit{modification} event of a \ct{file}.
