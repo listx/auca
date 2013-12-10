@@ -74,7 +74,7 @@ prog opts@Opts{..} filesToWatch = do
 	mapM_ (\f -> addWatch inotify [Attrib, Modify, DeleteSelf] f (eventHandler comDef f inotify)) filesToWatch
 	hSetBuffering stdin NoBuffering
 	hSetEcho stdin False -- disable terminal echo
-	keyHandler opts comDef (head filesToWatch) wds -- loop to handle key presses
+	keyHandler opts comDef (head filesToWatch) inotify -- loop to handle key presses
 \end{code}
 
 \ct{prog} initializes the \ct{inotify} API provided by the Linux kernel.

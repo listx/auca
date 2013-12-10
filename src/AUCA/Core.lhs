@@ -37,11 +37,11 @@ We ignore all other types of events, but print out info messages to tell the use
 If a file becomes ignored or deleted for some reason, we re-watch it.\fn{Vim tends to delete and re-create files when saving a modification.}
 
 \begin{code}
-keyHandler :: Opts -> String -> FilePath -> [WatchDescriptor] -> IO ()
-keyHandler o@Opts{..} comDef f wds = keyHandler' =<< getChar
+keyHandler :: Opts -> String -> FilePath -> INotify -> IO ()
+keyHandler o@Opts{..} comDef f inotify = keyHandler' =<< getChar
 	where
-	keyHandler' 'h' = helpMsg o f >> keyHandler o comDef f wds
-	keyHandler' 'q' = putStrLn [] >> mapM_ removeWatch wds
+	keyHandler' 'h' = helpMsg o f >> keyHandler o comDef f inotify
+	keyHandler' 'q' = putStrLn [] >> killINotify inotify
 	keyHandler' key = do
 		if elem key comKeys
 			then case lookup [key] comHash of
@@ -67,7 +67,7 @@ keyHandler o@Opts{..} comDef f wds = keyHandler' =<< getChar
 				putStrLn $ "; executing command "
 					++ squote (colorize Blue comDef)
 				runCom $ cmd comDef
-		keyHandler o comDef f wds
+		keyHandler o comDef f inotify
 	comHash :: [(String, String)]
 	comHash = if null command
 		then [("1", command_simple ++ " " ++ f)]
