@@ -32,6 +32,9 @@ cat auca.tex | sed \
     -e "s/AUCA_VERSION_TEXT/$hash/"\
     > auca-versioned.tex
 
+# Remove old versions.
+rm -f auca-*.pdf
+
 # Compile PDF.
 make
 
