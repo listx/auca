@@ -8,7 +8,6 @@ There are two main functions here --- \ct{eventHandler} and \ct{keyHandler}.
 
 module AUCA.Core where
 
-import Data.Maybe
 import System.Exit
 import System.INotify
 import System.Process
@@ -16,23 +15,26 @@ import System.Process
 import AUCA.Option
 import AUCA.Util
 
--- Only run the given command on a file modification event (ignore directory
--- modifications or paths that do not exist).
-eventHandler :: String -> FilePath -> Event -> IO ()
-eventHandler comDef fp Modified{..}
-	| isDirectory || isJust maybeFilePath
-		= putStrLn "Directory modification" >> return ()
-	| otherwise = do
+eventHandler :: String -> FilePath -> INotify -> Event -> IO ()
+eventHandler comDef fp inotify ev = case ev of
+	Attributes{..} -> runCom'
+	Modified{..} -> runCom'
+	Ignored -> runCom'
+	DeletedSelf -> addWatch inotify [Attrib, Modify, DeleteSelf] fp (eventHandler comDef fp inotify) >> return ()
+	_ -> showInfo
+	where
+	showInfo = putStrLn ("File: " ++ fp ++ " Event: " ++ show ev)
+	runCom' = do
 		putStrLn []
 		showTime
 		putStr $ ": " ++ colorize Magenta "change detected on file " ++ squote fp
 		putStrLn $ "; executing command " ++ squote (colorize Blue comDef)
 		runCom $ cmd comDef
-eventHandler _ fp ev = putStrLn ("File: " ++ fp ++ " Event: " ++ show ev) >> return ()
 \end{code}
 
 We only execute the given command when the detected event is a \textit{modification} event of a \ct{file}.
 We ignore all other types of events, but print out info messages to tell the user what happened.
+If a file becomes ignored or deleted for some reason, we re-watch it.\fn{Vim tends to delete and re-create files when saving a modification.}
 
 \begin{code}
 keyHandler :: Opts -> String -> FilePath -> [WatchDescriptor] -> IO ()
