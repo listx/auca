@@ -71,13 +71,13 @@ prog opts@Opts{..} filesToWatch = do
 	inotify <- initINotify
 	putStrLn "\nFiles to watch:\n"
 	mapM_ putStrLn filesToWatch
-	mapM_ (\f -> addWatch inotify [Attrib, Modify, DeleteSelf] f (eventHandler comDef f inotify)) filesToWatch
+	mapM_ (\f -> addWD inotify f (eventHandler comDef f inotify)) filesToWatch
 	hSetBuffering stdin NoBuffering
 	hSetEcho stdin False -- disable terminal echo
 	keyHandler opts comDef (head filesToWatch) inotify -- loop to handle key presses
 \end{code}
 
 \ct{prog} initializes the \ct{inotify} API provided by the Linux kernel.
-We simply tell the API to check for any file modifications on the list of files in \ct{filesToWatch}.
+We simply tell the API to check for any file modifications on the list of files in \ct{filesToWatch}, with the \ct{addWD} helper function defined in \ct{AUCA.Core}.
 We then move on and enter into \ct{keyHandler}, a simple loop that checks for manual key presses by the user.
 The calls to disable buffering on STDIN allow \ct{keyHandler} to detect individual key presses at a time.

@@ -20,7 +20,9 @@ eventHandler comDef fp inotify ev = case ev of
 	Attributes{..} -> runCom'
 	Modified{..} -> runCom'
 	Ignored -> runCom'
-	DeletedSelf -> addWatch inotify [Attrib, Modify, DeleteSelf] fp (eventHandler comDef fp inotify) >> return ()
+	DeletedSelf -> do
+		_ <- addWD inotify fp (eventHandler comDef fp inotify)
+		return ()
 	_ -> showInfo
 	where
 	showInfo = putStrLn ("File: " ++ fp ++ " Event: " ++ show ev)
@@ -35,6 +37,15 @@ eventHandler comDef fp inotify ev = case ev of
 We only execute the given command when the detected event is a \textit{modification} event of a \ct{file}.
 We ignore all other types of events, but print out info messages to tell the user what happened.
 If a file becomes ignored or deleted for some reason, we re-watch it.\fn{Vim tends to delete and re-create files when saving a modification.}
+
+\begin{code}
+addWD :: INotify -> FilePath -> (Event -> IO ()) -> IO WatchDescriptor
+addWD inotify fp evHandler = addWatch inotify evs fp evHandler
+	where
+	evs = [Attrib, Modify, DeleteSelf]
+\end{code}
+
+\ct{addWD} is a simple wrapper function around the more general \ct{addWatch} function provided by \ct{System.INotify}.
 
 \begin{code}
 keyHandler :: Opts -> String -> FilePath -> INotify -> IO ()
