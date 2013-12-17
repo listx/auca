@@ -29,7 +29,7 @@ hash=$(git rev-list --all -1)
 
 # Replace "AUCA_VERSION_TEXT" line in auca.tex with $hash.
 cat auca.tex | sed \
-    -e "s/AUCA_VERSION_TEXT/$hash/"\
+    -e "s/AUCA-VERSION-TEXT/$hash/"\
     > auca-versioned.tex
 
 # Remove old versions.
