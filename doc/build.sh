@@ -32,9 +32,9 @@ commit_desc=$(git describe --long $commit_hash | cut -c2-)
 
 # Replace placeholder text.
 cat auca.tex | sed \
-    -e "s/AUCA-COMMIT-DESC/$commit_desc/"\
-    -e "s/AUCA-COMMIT-HASH/$commit_hash/"\
-    -e "s/AUCA-COMMIT-DATE/$commit_date/"\
+    -e "s/GIT-COMMIT-DESC/$commit_desc/"\
+    -e "s/GIT-COMMIT-HASH/$commit_hash/"\
+    -e "s/GIT-COMMIT-DATE/$commit_date/"\
     > auca-versioned.tex
 
 # Remove old versions.
