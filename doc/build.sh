@@ -24,12 +24,16 @@ if [[ $(git status --porcelain -uno | wc -l) -gt 0 ]]; then
     fi
 fi
 
-# Find latest commit hash.
-hash=$(git rev-list --all -1)
+# Find latest commit hash and date.
+commit_hash_date=$(git rev-list --all -1 --pretty="format:%ci")
+commit_hash=$(echo $commit_hash_date | head -n1 | cut -d " " -f2)
+commit_date=$(echo $commit_hash_date | tail -n1)
+commit_desc=$(git describe $commit_hash)
 
-# Replace "AUCA_VERSION_TEXT" line in auca.tex with $hash.
+# Replace placeholder text.
 cat auca.tex | sed \
-    -e "s/AUCA-VERSION-TEXT/$hash/"\
+    -e "s/AUCA-VERSION-TEXT/$commit_hash/"\
+    -e "s/AUCA-VERSION-DATE/$commit_date/"\
     > auca-versioned.tex
 
 # Remove old versions.
@@ -38,5 +42,5 @@ rm -f auca-*.pdf
 # Compile PDF.
 make
 
-# Append $hash to filename as well.
-cp -f auca-versioned.pdf auca-$hash.pdf
+# Append $commit_desc to manual's filename.
+cp -f auca-versioned.pdf auca-$commit_desc.pdf
