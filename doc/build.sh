@@ -28,12 +28,13 @@ fi
 commit_hash_date=$(git rev-list --all -1 --pretty="format:%ci")
 commit_hash=$(echo $commit_hash_date | head -n1 | cut -d " " -f2)
 commit_date=$(echo $commit_hash_date | tail -n1)
-commit_desc=$(git describe $commit_hash)
+commit_desc=$(git describe --long $commit_hash | cut -c2-)
 
 # Replace placeholder text.
 cat auca.tex | sed \
-    -e "s/AUCA-VERSION-TEXT/$commit_hash/"\
-    -e "s/AUCA-VERSION-DATE/$commit_date/"\
+    -e "s/AUCA-COMMIT-DESC/$commit_desc/"\
+    -e "s/AUCA-COMMIT-HASH/$commit_hash/"\
+    -e "s/AUCA-COMMIT-DATE/$commit_date/"\
     > auca-versioned.tex
 
 # Remove old versions.
