@@ -12,7 +12,7 @@ _PROGRAM_NAME
 	, _PROGRAM_DESC
 	, _COPYRIGHT :: String
 _PROGRAM_NAME = "auca"
-_PROGRAM_VERSION = "0.1.0"
+_PROGRAM_VERSION = "0.1.1"
 _PROGRAM_INFO = _PROGRAM_NAME ++ " version " ++ _PROGRAM_VERSION
 _PROGRAM_DESC = "execute arbitrary command(s) based on file changes"
 _COPYRIGHT = "(C) Linus Arver 2011-2013"
