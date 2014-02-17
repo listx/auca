@@ -22,10 +22,12 @@
 		{\csname lst@SaveFirstLabel\endcsname}
 	\lstset{
 		basicstyle=\small\ttfamily,
-		frame=single,
+		frame=l,
+		framerule=3pt,
 		framexleftmargin=0.5em,
 		framexrightmargin=0.5em,
-		backgroundcolor=\color{LemonChiffon1},
+		rulecolor=\color{Ivory3},
+		backgroundcolor=\color{white},
 		showstringspaces=false,
 		flexiblecolumns=false,
     }
@@ -36,17 +38,27 @@
 \setsansfont[Mapping=tex-text,Ligatures=Common,Scale=0.8]{DejaVu Sans Condensed}
 \setmonofont[Scale=0.8]{DejaVu Sans Mono}
 
+% Make all monospaced text bolded.
+\let\temptt\texttt
+\renewcommand\texttt[1]{\textbf{\temptt{#1}}}
+
 % intra-document hyperlinks
 \usepackage[colorlinks,linkcolor=blue]{hyperref}
 
 \begin{document}
-\title{The \texttt{auca} Source Manual}
-\author{Linus Arver\\
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}
+\title{\Huge Auca Source Manual}
+\author{Linus Arver\footnotemark[1]\ \footnotemark[2]
 \\
-ver. \href{http://www.github.com/listx/auca/commit/GIT-COMMIT-HASH}{\texttt{GIT-COMMIT-DESC}}
+\texttt{GIT-COMMIT-DESC}\footnotemark[4]
 }
 \date{\texttt{GIT-COMMIT-DATE}}
-\maketitle
+\footnotetext[1]{Email: \texttt{X@Y.Z}, where Z is \texttt{edu}, Y is \texttt{ucla}, and X is \texttt{linus}.}
+\footnotetext[2]{Website: \texttt{\url{http://listx.github.io}}.}
+\footnotetext[4]{This document is generated from the sources from the latest commit. The full hash of this commit is \href{http://www.github.com/listx/auca/commit/GIT-COMMIT-HASH}{\texttt{GIT-COMMIT-HASH}}.}
+\maketitle{}
+\renewcommand{\thefootnote}{\arabic{footnote}}
+
 \tableofcontents
 \input{intro.tex}
 \input{../src/auca.lhs}
