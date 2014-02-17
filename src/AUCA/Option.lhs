@@ -16,6 +16,7 @@ data Opts = Opts
 	, command_simple :: String
 	, file :: [FilePath]
 	, list :: FilePath
+	, buffer_seconds :: Int
 	} deriving (Data, Typeable, Show, Eq)
 
 progOpts :: Opts
@@ -31,6 +32,8 @@ progOpts = Opts
 			\ files"
 	, list = def
 		&= help "list of files to watch"
+	, buffer_seconds = 1
+		&= help "minimum interval of seconds to process file changes/keystrokes"
 	}
 	&= details
 		[ "Notes:"

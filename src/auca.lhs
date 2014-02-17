@@ -1,11 +1,12 @@
 \section{auca.lhs}
 
 \begin{code}
+{-# LANGUAGE PackageImports #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Main where
 
-import Control.Monad (when)
+import "monads-tf" Control.Monad.State
 import Data.List (nub)
 import System.IO
 import System.Directory
@@ -65,16 +66,23 @@ filesCheck fs flist
 \begin{code}
 prog :: Opts -> [FilePath] -> IO ()
 prog opts@Opts{..} filesToWatch = do
-	let comDef = if null command_simple
-		then (head command)
-		else command_simple ++ " " ++ (head filesToWatch)
+	let
+		comDef = if null command_simple
+			then (head command)
+			else command_simple ++ " " ++ (head filesToWatch)
+		tb = TimeBuffer
+			{ bufSeconds = fromIntegral buffer_seconds
+			, bufSecStockpile = 0
+			}
 	inotify <- initINotify
 	putStrLn "\nFiles to watch:\n"
 	mapM_ putStrLn filesToWatch
 	mapM_ (\f -> addWD inotify f (eventHandler comDef f inotify)) filesToWatch
 	hSetBuffering stdin NoBuffering
 	hSetEcho stdin False -- disable terminal echo
-	keyHandler opts comDef (head filesToWatch) inotify -- loop to handle key presses
+	evalStateT
+		(keyHandler opts comDef (head filesToWatch) inotify)
+		tb
 \end{code}
 
 \ct{prog} initializes the \ct{inotify} API provided by the Linux kernel.
