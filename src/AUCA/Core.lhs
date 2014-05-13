@@ -151,6 +151,7 @@ cmd com = CreateProcess
 	{ cmdspec = ShellCommand $
 		(com ++ " 2>&1 | sed \"s/^/  " ++ colorize Cyan ">" ++ " /\"")
 	, cwd = Nothing
+	, delegate_ctlc = True
 	, env = Nothing
 	, std_in = CreatePipe
 	, std_out = Inherit
