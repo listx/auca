@@ -7,6 +7,9 @@
 *.pdf
 *.toc
 
+.cabal-sandbox
 auca
+cabal.sandbox.config
+dist
 doc/watch
 doc/auca-versioned.tex

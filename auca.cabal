@@ -1,0 +1,27 @@
+name: auca
+version: 0.0.1.2
+synopsis: Execute arbitrary command(s) based on file changes
+license: FreeBSD
+license-file: LICENSE
+author: Linus Arver
+maintainer: linusarver@gmail.com
+category: Utility
+build-type: Simple
+cabal-version: >=1.10
+
+executable auca
+  main-is: auca.lhs
+  default-language: Haskell2010
+  other-extensions:
+      DeriveDataTypeable
+    , PackageImports
+    , RecordWildCards
+  hs-source-dirs: src
+  build-depends:
+      base >= 4.7 && < 4.8
+    , directory >= 1.2.1.0 && < 1.3
+    , cmdargs >= 0.10.7 && < 0.11
+    , hinotify >= 0.3.7 && < 0.4
+    , monads-tf >= 0.1.0.2 && < 0.2
+    , process >= 1.2.0.0 && < 1.3
+    , time >= 1.4.2 && < 1.5
