@@ -32,7 +32,7 @@ progOpts = Opts
 			\ files"
 	, list = def
 		&= help "list of files to watch"
-	, buffer_seconds = 1
+	, buffer_seconds = 2
 		&= help "minimum interval of seconds to process file changes/keystrokes"
 	}
 	&= details
