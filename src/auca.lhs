@@ -17,7 +17,11 @@ import System.INotify
 import AUCA.Core
 import AUCA.Option
 import AUCA.Util
+\end{code}
 
+\ct{main} checks for various errors before passing control over to \ct{prog}.
+
+\begin{code}
 main :: IO ()
 main = do
 	hSetBuffering stdout NoBuffering
@@ -39,29 +43,35 @@ main = do
 	prog opts filesMaster
 \end{code}
 
-\ct{main} checks for various errors before passing control over to \ct{prog}.
+\ct{argsCheck} rejects any obviously illegal arguments.
 
 \begin{code}
 argsCheck :: Opts -> IO Int
 argsCheck Opts{..}
 	| null commands && null command_simple
 		= errMsgNum "--command or --command-simple must be defined" 1
-	| null file && null list = errMsgNum "either --file or --list must be defined" 1
+	| null file && null list
+		= errMsgNum "either --file or --list must be defined" 1
 	| otherwise = return 0
 \end{code}
 
-\ct{argsCheck} rejects any obviously illegal arguments.
+\ct{filesCheck} makes sure that all files defined by the user actually exist in the filesystem.
 
 \begin{code}
 -- Verify that the --file and --list arguments actually make sense.
 filesCheck :: [Bool] -> [Bool] -> IO Int
 filesCheck fs flist
-	| any (==False) fs = errMsgNum "an argument to --file does not exist" 1
-	| any (==False) flist = errMsgNum "a file defined in --list does not exist" 1
+	| any (==False) fs
+		= errMsgNum "an argument to --file does not exist" 1
+	| any (==False) flist
+		= errMsgNum "a file defined in --list does not exist" 1
 	| otherwise = return 0
 \end{code}
 
-\ct{filesCheck} makes sure that all files defined by the user actually exist in the filesystem.
+\ct{prog} initializes the \ct{inotify} API provided by the Linux kernel.
+We simply tell the API to check for any file modifications on the list of files in \ct{filesToWatch}, with the \ct{addWD} helper function defined in \ct{AUCA.Core}.
+We then move on and enter into \ct{keyHandler}, a simple loop that checks for manual key presses by the user.
+The calls to disable buffering on STDIN allow \ct{keyHandler} to detect individual key presses at a time.
 
 \begin{code}
 prog :: Opts -> [FilePath] -> IO ()
@@ -90,8 +100,3 @@ prog opts@Opts{..} filesToWatch = do
 			}
 	evalStateT keyHandler appState
 \end{code}
-
-\ct{prog} initializes the \ct{inotify} API provided by the Linux kernel.
-We simply tell the API to check for any file modifications on the list of files in \ct{filesToWatch}, with the \ct{addWD} helper function defined in \ct{AUCA.Core}.
-We then move on and enter into \ct{keyHandler}, a simple loop that checks for manual key presses by the user.
-The calls to disable buffering on STDIN allow \ct{keyHandler} to detect individual key presses at a time.
