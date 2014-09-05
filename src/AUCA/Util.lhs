@@ -14,7 +14,11 @@ data Color
 	| Magenta
 	| Cyan
 	deriving (Show, Eq)
+\end{code}
 
+\ct{colorize} adds special ANSI escape sequences to colorize text for output in a terminal.
+
+\begin{code}
 colorize :: Color -> String -> String
 colorize c s = c' ++ s ++ e
 	where
@@ -28,7 +32,7 @@ colorize c s = c' ++ s ++ e
 	e = "\x1b[0m"
 \end{code}
 
-\ct{colorize} adds special ANSI escape sequences to colorize text for output in a terminal.
+\ct{errMsg} and \ct{errMsgNum} are helper functions to ease reporting simple errors.
 
 \begin{code}
 errMsg :: String -> IO ()
@@ -38,7 +42,8 @@ errMsgNum :: String -> Int -> IO Int
 errMsgNum str num = errMsg str >> return num
 \end{code}
 
-\ct{errMsg} and \ct{errMsgNum} are helper functions to ease reporting simple errors.
+\ct{squote} quotes a string with single quotes.
+\ct{showTime} displays the current local zoned time.
 
 \begin{code}
 squote :: String -> String
@@ -48,5 +53,43 @@ showTime :: IO ()
 showTime = getZonedTime >>= putStr . show
 \end{code}
 
-\ct{squote} quotes a string with single quotes.
-\ct{showTime} displays the current local zoned time.
+\ct{swapElems} swaps two elements in a list.
+It does nothing if any of the arguments are invalid.
+
+\begin{code}
+swapElems :: (Int, Int) -> [a] -> [a]
+swapElems (a, b) xs
+	| null xs = xs
+	| length xs == 1 = xs
+	| a < 0 = xs
+	| b < 0 = xs
+	| a == b = xs
+	| a > (length xs - 1) = xs
+	| b > (length xs - 1) = xs
+	| b < a = swapElems (b, a) xs
+	| otherwise = preA
+		++ [xs!!b]
+		++ betweenAB
+		++ [xs!!a]
+		++ postB
+	where
+	preA = take a xs
+	betweenAB = drop (a + 1) $ take b xs
+	postB = drop (b + 1) xs
+\end{code}
+
+\begin{code}
+toInt :: Char -> Int
+toInt c = case c of
+	'0' -> 0
+	'1' -> 1
+	'2' -> 2
+	'3' -> 3
+	'4' -> 4
+	'5' -> 5
+	'6' -> 6
+	'7' -> 7
+	'8' -> 8
+	'9' -> 9
+	_ -> 0
+\end{code}

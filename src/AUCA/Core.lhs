@@ -20,7 +20,28 @@ import AUCA.Option
 import AUCA.Util
 \end{code}
 
+\begin{code}
+data AppState = AppState
+	{ timeBuffer :: TimeBuffer
+	, comDef :: String
+	, comSimpleFilePath :: FilePath
+	, inotify :: INotify
+	, opts :: Opts
+	}
+\end{code}
+
+\begin{code}
+data TimeBuffer = TimeBuffer
+	{ bufSeconds :: NominalDiffTime
+	, bufSecStockpile :: NominalDiffTime
+	}
+\end{code}
+
 \subsection{Event Handling}
+
+We only execute the given command when the detected event is a \textit{modification} event of a \ct{file}.
+We ignore all other types of events, but print out info messages to tell the user what happened.
+If a file becomes ignored or deleted for some reason, we re-watch it.\fn{Vim tends to delete and re-create files when saving a modification.}
 
 \begin{code}
 eventHandler :: String -> FilePath -> INotify -> Event -> IO ()
@@ -42,9 +63,7 @@ eventHandler comDef fp inotify ev = case ev of
 		runCom $ cmd comDef
 \end{code}
 
-We only execute the given command when the detected event is a \textit{modification} event of a \ct{file}.
-We ignore all other types of events, but print out info messages to tell the user what happened.
-If a file becomes ignored or deleted for some reason, we re-watch it.\fn{Vim tends to delete and re-create files when saving a modification.}
+\ct{addWD} is a simple wrapper function around the more general \ct{addWatch} function provided by \ct{System.INotify}.
 
 \begin{code}
 addWD :: INotify -> FilePath -> (Event -> IO ()) -> IO WatchDescriptor
@@ -53,16 +72,7 @@ addWD inotify fp evHandler = addWatch inotify evs fp evHandler
 	evs = [Attrib, Modify, DeleteSelf]
 \end{code}
 
-\ct{addWD} is a simple wrapper function around the more general \ct{addWatch} function provided by \ct{System.INotify}.
-
 \subsection{Key Handling}
-
-\begin{code}
-data TimeBuffer = TimeBuffer
-	{ bufSeconds :: NominalDiffTime
-	, bufSecStockpile :: NominalDiffTime
-	}
-\end{code}
 
 The keypresses are interpreted through a buffer system.
 Essentially, this system works to prevent spamming the \ct{keyHandler} loop.
@@ -74,67 +84,108 @@ If this stockpile adds up to the treshhold defined by \ct{bufSeconds}, we execut
 Note that if the user waits a long time, that's fine as the \ct{getChar} function will take that much longer to finish extracting the keypress.
 
 \begin{code}
-keyHandler :: Opts -> String -> FilePath -> INotify -> StateT TimeBuffer IO ()
-keyHandler o@Opts{..} comDef f inotify = do
+keyHandler :: StateT AppState IO ()
+keyHandler = do
+	appState@AppState{..} <- get
 	t1 <- lift getCurrentTime
 	c <- lift getChar
 	when (c == 'q') . lift $ do
 		killINotify inotify
 		exitSuccess
-	tb@TimeBuffer{..} <- get
+	let
+		tb@TimeBuffer{..} = timeBuffer
 	t2 <- lift getCurrentTime
 	let
 		t3 = diffUTCTime t2 t1
 		stockpile = t3 + bufSecStockpile
 	if (stockpile >= bufSeconds)
 		then do
-			put $ tb { bufSecStockpile = stockpile - bufSeconds }
+			let
+				tb' = tb {bufSecStockpile = stockpile - bufSeconds}
+			put $ appState {timeBuffer = tb'}
 			keyHandler' c
+			keyHandler
 		else do
-			put $ tb { bufSecStockpile = stockpile + t3 }
-			keyHandler o comDef f inotify
-	where
-	keyHandler' 'h' = do
-		lift $ helpMsg o f
-		keyHandler o comDef f inotify
-	keyHandler' 'q' = do
-		lift $ putStrLn []
-		lift $ killINotify inotify
-	keyHandler' key = do
-		if elem key comKeys
-			then case lookup [key] comHash of
-				Just com -> do
-					lift $ putStrLn []
-					lift $ showTime
-					lift . putStr $ ": "
-						++ colorize Cyan "manual override"
-						++ " (slot "
-						++ colorize Yellow [key]
-						++ ")"
-					lift . putStrLn $ "; executing command "
-						++ squote (colorize Blue com)
-					lift . runCom $ cmd com
-				_ -> do
-					lift $ putStrLn []
-					lift . putStrLn $ "command slot for key "
-						++ squote (colorize Yellow [key]) ++ " is empty"
-			else do
-				lift $ putStrLn []
-				lift showTime
-				lift . putStr $ ": " ++ colorize Cyan "manual override"
-				lift . putStrLn $ "; executing command "
-					++ squote (colorize Blue comDef)
-				lift . runCom $ cmd comDef
-		keyHandler o comDef f inotify
-	comHash :: [(String, String)]
-	comHash = if null command
-		then [("1", command_simple ++ " " ++ f)]
-		else zip (map show [(1::Int)..10]) command
-	comKeys :: String
-	comKeys = concatMap show [(0::Int)..9]
+			let
+				tb' = tb {bufSecStockpile = stockpile + t3}
+			put $ appState {timeBuffer = tb'}
+			keyHandler
 \end{code}
 
 The \ct{comHash} and \ct{comKeys} structures define the hotkeys available to the user if multiple commands were defined.
+
+\begin{code}
+keyHandler' :: Char -> StateT AppState IO ()
+keyHandler' key
+	| key == 'h' = do
+		AppState{..} <- get
+		lift $ helpMsg opts comSimpleFilePath
+	| key == 'd' = do
+		appState@AppState{..} <- get
+		lift $ helpMsg opts comSimpleFilePath
+		lift . putStrLn $ colorize Cyan "swapping default command..."
+		c <- lift getChar
+		comHash <- getComHash
+		case lookup [c] comHash of
+			Just com -> do
+				let
+					opts' = opts
+						{ commands = swapElems (0, toInt c)
+							$ commands opts
+						}
+				put $ appState
+					{ comDef = com
+					, opts = opts'
+					}
+				lift $ helpMsg opts' comSimpleFilePath
+			_ -> do
+				lift . putStrLn . colorize Red $ unwords
+					[ "key"
+					, show c
+					, "is not a valid command slot"
+					]
+	| elem key comKeys = do
+		AppState{..} <- get
+		comHash <- getComHash
+		case lookup [key] comHash of
+			Just com -> do
+				lift $ putStrLn []
+				lift $ showTime
+				lift . putStr $ ": "
+					++ colorize Cyan "manual override"
+					++ " (slot "
+					++ colorize Yellow [key]
+					++ ")"
+				lift . putStrLn $ "; executing command "
+					++ squote (colorize Blue com)
+				lift . runCom $ cmd com
+			_ -> do
+				lift $ putStrLn []
+				lift . putStrLn $ "command slot for key "
+					++ squote (colorize Yellow [key]) ++ " is empty"
+	| otherwise = do
+		AppState{..} <- get
+		lift $ putStrLn []
+		lift showTime
+		lift . putStr $ ": " ++ colorize Cyan "manual override"
+		lift . putStrLn $ "; executing command "
+			++ squote (colorize Blue comDef)
+		lift . runCom $ cmd comDef
+	where
+	comKeys :: String
+	comKeys = concatMap show [(0::Int)..9]
+	getComHash = do
+		AppState{..} <- get
+		let
+			coms = commands opts
+			comSimple = command_simple opts
+		return $ if null coms
+			then [("0", comSimple ++ " " ++ comSimpleFilePath)]
+			else zip (map show [(0::Int)..9]) coms
+\end{code}
+
+\ct{runCom} and \ct{cmd} are the actual workhorses that spawn the external command defined by the user.
+The output of the external command is colorized using the \ct{sed} stream editor.
 
 \begin{code}
 runCom :: CreateProcess -> IO ()
@@ -160,6 +211,3 @@ cmd com = CreateProcess
 	, create_group = False
 	}
 \end{code}
-
-\ct{runCom} and \ct{cmd} are the actual workhorses that spawn the external command defined by the user.
-The output of the external command is colorized using the \ct{sed} stream editor.

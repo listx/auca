@@ -12,7 +12,7 @@ import AUCA.Meta
 import AUCA.Util
 
 data Opts = Opts
-	{ command :: [String]
+	{ commands :: [String]
 	, command_simple :: String
 	, file :: [FilePath]
 	, list :: FilePath
@@ -21,7 +21,7 @@ data Opts = Opts
 
 progOpts :: Opts
 progOpts = Opts
-	{ command = def &= typ "COMMAND"
+	{ commands = def &= typ "COMMAND(S)"
 		&= help "command(s) to execute; up to 10 (hotkeyed to 1-0)"
 	, command_simple = def &= typ "COMMAND" &= name "C"
 		&= help "command to execute; it takes the first file, and calls command after\
@@ -60,11 +60,15 @@ It also explicitly sets the `\ct{-h}' and `\ct{-v}' flags, to override the ones 
 \begin{code}
 helpMsg :: Opts -> FilePath -> IO ()
 helpMsg Opts{..} f = do
-	mapM_ showCom $ if null command
-		then [("1", command_simple ++ " " ++ f)]
-		else zip (map show [(1::Int)..10]) command
+	mapM_ showCom $ if null commands
+		then [("0", command_simple ++ " " ++ f)]
+		else zip (map show [(0::Int)..9]) commands
 	putStrLn "press `h' for help"
 	putStrLn "press `q' to quit"
+	putStrLn $ unwords
+		[ "press `d' to set the default command to another one from the"
+		, "command slot"
+		]
 	putStrLn $ "press any other key to execute the default command " ++
 		squote (colorize Blue comDef)
 	where
@@ -73,9 +77,9 @@ helpMsg Opts{..} f = do
 		++ squote (colorize Yellow a)
 		++ " set to "
 		++ squote (colorize Blue b)
-	comDef = if null command
+	comDef = if null commands
 		then command_simple ++ " " ++ f
-		else head command
+		else head commands
 \end{code}
 
 \ct{helpMsg} is the function that gets called if the user requests for help interactively by pressing the `\ct{h}' key.

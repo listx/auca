@@ -44,7 +44,7 @@ main = do
 \begin{code}
 argsCheck :: Opts -> IO Int
 argsCheck Opts{..}
-	| null command && null command_simple
+	| null commands && null command_simple
 		= errMsgNum "--command or --command-simple must be defined" 1
 	| null file && null list = errMsgNum "either --file or --list must be defined" 1
 	| otherwise = return 0
@@ -68,7 +68,7 @@ prog :: Opts -> [FilePath] -> IO ()
 prog opts@Opts{..} filesToWatch = do
 	let
 		comDef = if null command_simple
-			then (head command)
+			then (head commands)
 			else command_simple ++ " " ++ (head filesToWatch)
 		tb = TimeBuffer
 			{ bufSeconds = fromIntegral buffer_seconds
@@ -80,9 +80,15 @@ prog opts@Opts{..} filesToWatch = do
 	mapM_ (\f -> addWD inotify f (eventHandler comDef f inotify)) filesToWatch
 	hSetBuffering stdin NoBuffering
 	hSetEcho stdin False -- disable terminal echo
-	evalStateT
-		(keyHandler opts comDef (head filesToWatch) inotify)
-		tb
+	let
+		appState = AppState
+			{ timeBuffer = tb
+			, comDef = comDef
+			, comSimpleFilePath = head filesToWatch
+			, inotify = inotify
+			, opts = opts
+			}
+	evalStateT keyHandler appState
 \end{code}
 
 \ct{prog} initializes the \ct{inotify} API provided by the Linux kernel.
