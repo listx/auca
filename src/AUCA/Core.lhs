@@ -2,6 +2,7 @@
 
 There are two main functions here --- \ct{eventHandler} and \ct{keyHandler}.
 \ct{eventHandler} hooks into the \ct{inotify} API for executing arbitrary commands, and \ct{keyHandler} handles all interactive key presses by the user.
+\ct{eventHandler} is the more important function, because it is the only one called automatically based on file changes (the true nature of our program, \textit{auca}).
 
 \begin{code}
 {-# LANGUAGE PackageImports #-}
@@ -9,6 +10,7 @@ There are two main functions here --- \ct{eventHandler} and \ct{keyHandler}.
 
 module AUCA.Core where
 
+import Control.Concurrent.STM
 import Control.Monad
 import "monads-tf" Control.Monad.State
 import Data.Time.Clock
@@ -23,11 +25,17 @@ import AUCA.Util
 \begin{code}
 data AppState = AppState
 	{ timeBuffer :: TimeBuffer
-	, comDef :: String
-	, comSimpleFilePath :: FilePath
+	, comSet :: Var CommandSet
 	, inotify :: INotify
-	, opts :: Opts
 	}
+\end{code}
+
+\ct{CommandSet} is the set of commands to run that are recognized by Auca.
+If we ever modify the default command with the `\ct{d}' key, we will modify the \ct{CommandSet}.
+Independent threads (in our case, the threads spawned by \ct{System.Inotify}) will refer back to the master thread to see what is the current default command, by looking at \ct{CommandSet}.
+
+\begin{code}
+type CommandSet = [String]
 \end{code}
 
 \begin{code}
@@ -44,18 +52,21 @@ We ignore all other types of events, but print out info messages to tell the use
 If a file becomes ignored or deleted for some reason, we re-watch it.\fn{Vim tends to delete and re-create files when saving a modification.}
 
 \begin{code}
-eventHandler :: String -> FilePath -> INotify -> Event -> IO ()
-eventHandler comDef fp inotify ev = case ev of
+eventHandler :: Var CommandSet -> FilePath -> INotify -> Event -> IO ()
+eventHandler comset fp inotify ev = case ev of
 	Attributes{..} -> runCom'
 	Modified{..} -> runCom'
 	Ignored -> runCom'
 	DeletedSelf -> do
-		_ <- addWD inotify fp (eventHandler comDef fp inotify)
+		_ <- addWD inotify fp (eventHandler comset fp inotify)
 		return ()
 	_ -> showInfo
 	where
 	showInfo = putStrLn ("File: " ++ fp ++ " Event: " ++ show ev)
 	runCom' = do
+		comSet' <- varGet comset
+		let
+			comDef = head comSet'
 		putStrLn []
 		showTime
 		putStr $ ": " ++ colorize Magenta "change detected on file " ++ squote fp
@@ -119,25 +130,18 @@ keyHandler' :: Char -> StateT AppState IO ()
 keyHandler' key
 	| key == 'h' = do
 		AppState{..} <- get
-		lift $ helpMsg opts comSimpleFilePath
+		lift $ helpMsg comSet
 	| key == 'd' = do
 		appState@AppState{..} <- get
-		lift $ helpMsg opts comSimpleFilePath
+		comset <- lift $ varGet comSet
+		lift $ helpMsg comSet
 		lift . putStrLn $ colorize Cyan "swapping default command..."
 		c <- lift getChar
 		comHash <- getComHash
 		case lookup [c] comHash of
 			Just com -> do
-				let
-					opts' = opts
-						{ commands = swapElems (0, toInt c)
-							$ commands opts
-						}
-				put $ appState
-					{ comDef = com
-					, opts = opts'
-					}
-				lift $ helpMsg opts' comSimpleFilePath
+				lift . varSet comSet $ swapElems (0, toInt c) comset
+				lift $ helpMsg comSet
 			_ -> do
 				lift . putStrLn . colorize Red $ unwords
 					[ "key"
@@ -165,6 +169,9 @@ keyHandler' key
 					++ squote (colorize Yellow [key]) ++ " is empty"
 	| otherwise = do
 		AppState{..} <- get
+		comset <- lift $ varGet comSet
+		let
+			comDef = head comset
 		lift $ putStrLn []
 		lift showTime
 		lift . putStr $ ": " ++ colorize Cyan "manual override"
@@ -176,12 +183,8 @@ keyHandler' key
 	comKeys = concatMap show [(0::Int)..9]
 	getComHash = do
 		AppState{..} <- get
-		let
-			coms = commands opts
-			comSimple = command_simple opts
-		return $ if null coms
-			then [("0", comSimple ++ " " ++ comSimpleFilePath)]
-			else zip (map show [(0::Int)..9]) coms
+		comset <- lift $ varGet comSet
+		return $ zip (map show [(0::Int)..9]) comset
 \end{code}
 
 \ct{runCom} and \ct{cmd} are the actual workhorses that spawn the external command defined by the user.
@@ -210,4 +213,30 @@ cmd com = CreateProcess
 	, close_fds = True
 	, create_group = False
 	}
+\end{code}
+
+\ct{helpMsg} is the function that gets called if the user requests for help interactively by pressing the `\ct{h}' key.
+It is also displayed on startup.
+
+\begin{code}
+helpMsg :: Var CommandSet -> IO ()
+helpMsg comSet = do
+	comset <- varGet comSet
+	let
+		comDef = head comset
+	mapM_ showCom $ zip (map show [(0::Int)..9]) comset
+	putStrLn "press `h' for help"
+	putStrLn "press `q' to quit"
+	putStrLn $ unwords
+		[ "press `d' to set the default command to another one from the"
+		, "command slot"
+		]
+	putStrLn $ "press any other key to execute the default command " ++
+		squote (colorize Blue comDef)
+	where
+	showCom :: (String, String) -> IO ()
+	showCom (a, b) = putStrLn $ "key "
+		++ squote (colorize Yellow a)
+		++ " set to "
+		++ squote (colorize Blue b)
 \end{code}

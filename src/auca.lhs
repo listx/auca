@@ -39,7 +39,6 @@ main = do
 	errNo' <- filesCheck fs flist
 	when (errNo' > 0) $ exitWith $ ExitFailure errNo
 	let filesMaster = nub $ file ++ files
-	helpMsg opts (head filesMaster)
 	prog opts filesMaster
 \end{code}
 
@@ -75,28 +74,31 @@ The calls to disable buffering on STDIN allow \ct{keyHandler} to detect individu
 
 \begin{code}
 prog :: Opts -> [FilePath] -> IO ()
-prog opts@Opts{..} filesToWatch = do
+prog Opts{..} filesToWatch = do
 	let
 		comDef = if null command_simple
 			then (head commands)
 			else command_simple ++ " " ++ (head filesToWatch)
+		commandSet = if null command_simple
+			then commands
+			else [command_simple ++ " " ++ (head filesToWatch)]
 		tb = TimeBuffer
 			{ bufSeconds = fromIntegral buffer_seconds
 			, bufSecStockpile = 0
 			}
+	comset <- varCreate commandSet
 	inotify <- initINotify
 	putStrLn "\nFiles to watch:\n"
 	mapM_ putStrLn filesToWatch
-	mapM_ (\f -> addWD inotify f (eventHandler comDef f inotify)) filesToWatch
+	mapM_ (\f -> addWD inotify f (eventHandler comset f inotify)) filesToWatch
 	hSetBuffering stdin NoBuffering
 	hSetEcho stdin False -- disable terminal echo
 	let
 		appState = AppState
 			{ timeBuffer = tb
-			, comDef = comDef
-			, comSimpleFilePath = head filesToWatch
+			, comSet = comset
 			, inotify = inotify
-			, opts = opts
 			}
+	helpMsg comset
 	evalStateT keyHandler appState
 \end{code}

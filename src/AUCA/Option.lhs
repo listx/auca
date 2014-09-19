@@ -62,31 +62,3 @@ getOpts = cmdArgs $ progOpts
 	&= helpArg [explicit, name "help", name "h"]
 	&= versionArg [explicit, name "version", name "v", summary _PROGRAM_INFO]
 \end{code}
-
-\ct{helpMsg} is the function that gets called if the user requests for help interactively by pressing the `\ct{h}' key.
-It is also displayed on startup.
-
-\begin{code}
-helpMsg :: Opts -> FilePath -> IO ()
-helpMsg Opts{..} f = do
-	mapM_ showCom $ if null commands
-		then [("0", command_simple ++ " " ++ f)]
-		else zip (map show [(0::Int)..9]) commands
-	putStrLn "press `h' for help"
-	putStrLn "press `q' to quit"
-	putStrLn $ unwords
-		[ "press `d' to set the default command to another one from the"
-		, "command slot"
-		]
-	putStrLn $ "press any other key to execute the default command " ++
-		squote (colorize Blue comDef)
-	where
-	showCom :: (String, String) -> IO ()
-	showCom (a, b) = putStrLn $ "key "
-		++ squote (colorize Yellow a)
-		++ " set to "
-		++ squote (colorize Blue b)
-	comDef = if null commands
-		then command_simple ++ " " ++ f
-		else head commands
-\end{code}

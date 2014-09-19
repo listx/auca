@@ -3,6 +3,7 @@
 \begin{code}
 module AUCA.Util where
 
+import Control.Concurrent.STM
 import Data.Time.LocalTime
 import System.IO
 
@@ -14,6 +15,39 @@ data Color
 	| Magenta
 	| Cyan
 	deriving (Show, Eq)
+\end{code}
+
+Concurrency variable handling.
+
+\begin{code}
+-- Some mutable variable primitives; adapted from wxHaskell.
+type Var a = TVar a
+
+-- | Create a fresh mutable variable.
+varCreate :: a -> IO (Var a)
+varCreate = newTVarIO
+
+-- | Get the value of a mutable variable.
+varGet :: Var a -> IO a
+varGet v = atomically $ readTVar v
+
+-- | Set the value of a mutable variable.
+varSet :: Var a -> a -> IO ()
+varSet v x = atomically $ writeTVar v x
+
+-- | Swap the value of a mutable variable.
+varSwap :: Var a -> a -> IO a
+varSwap v x = atomically $ do
+	prev <- readTVar v
+	writeTVar v x
+	return prev
+
+-- | Update the value of a mutable variable and return the old value.
+varUpdate :: Var a -> (a -> a) -> IO a
+varUpdate v f = atomically $ do
+	x <- readTVar v
+	writeTVar v (f x)
+	return x
 \end{code}
 
 \ct{colorize} adds special ANSI escape sequences to colorize text for output in a terminal.
