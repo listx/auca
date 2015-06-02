@@ -9,7 +9,6 @@ module AUCA.Option where
 import System.Console.CmdArgs.Implicit
 
 import AUCA.Meta
-import AUCA.Util
 
 data Opts = Opts
 	{ commands :: [String]

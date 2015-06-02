@@ -10,7 +10,6 @@ There are two main functions here --- \ct{eventHandler} and \ct{keyHandler}.
 
 module AUCA.Core where
 
-import Control.Concurrent.STM
 import Control.Monad
 import "monads-tf" Control.Monad.State
 import Data.Time.Clock
@@ -18,7 +17,6 @@ import System.Exit
 import System.INotify
 import System.Process
 
-import AUCA.Option
 import AUCA.Util
 \end{code}
 
@@ -132,14 +130,14 @@ keyHandler' key
 		AppState{..} <- get
 		lift $ helpMsg comSet
 	| key == 'd' = do
-		appState@AppState{..} <- get
+		AppState{..} <- get
 		comset <- lift $ varGet comSet
 		lift $ helpMsg comSet
 		lift . putStrLn $ colorize Cyan "swapping default command..."
 		c <- lift getChar
 		comHash <- getComHash
 		case lookup [c] comHash of
-			Just com -> do
+			Just _ -> do
 				lift . varSet comSet $ swapElems (0, toInt c) comset
 				lift $ helpMsg comSet
 			_ -> do

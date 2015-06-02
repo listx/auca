@@ -76,9 +76,6 @@ The calls to disable buffering on STDIN allow \ct{keyHandler} to detect individu
 prog :: Opts -> [FilePath] -> IO ()
 prog Opts{..} filesToWatch = do
 	let
-		comDef = if null command_simple
-			then (head commands)
-			else command_simple ++ " " ++ (head filesToWatch)
 		commandSet = if null command_simple
 			then commands
 			else [command_simple ++ " " ++ (head filesToWatch)]
