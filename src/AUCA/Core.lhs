@@ -199,18 +199,7 @@ runCom com = do
 		else colorize Red "command failed"
 
 cmd :: String -> CreateProcess
-cmd com = CreateProcess
-	{ cmdspec = ShellCommand $
-		(com ++ " 2>&1 | sed \"s/^/  " ++ colorize Cyan ">" ++ " /\"")
-	, cwd = Nothing
-	, delegate_ctlc = True
-	, env = Nothing
-	, std_in = CreatePipe
-	, std_out = Inherit
-	, std_err = Inherit
-	, close_fds = True
-	, create_group = False
-	}
+cmd com = shell $ (com ++ " 2>&1 | sed \"s/^/  " ++ colorize Cyan ">" ++ " /\"")
 \end{code}
 
 \ct{helpMsg} is the function that gets called if the user requests for help interactively by pressing the `\ct{h}' key.
