@@ -12,6 +12,11 @@ cabal-version: >=1.10
 executable auca
   main-is: auca.lhs
   default-language: Haskell2010
+  other-modules:
+      AUCA.Core
+    , AUCA.Meta
+    , AUCA.Option
+    , AUCA.Util
   other-extensions:
       DeriveDataTypeable
     , PackageImports
