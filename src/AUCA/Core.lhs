@@ -17,6 +17,8 @@ import System.Exit
 import System.INotify
 import System.Process
 
+import qualified Data.ByteString.Char8 as B
+
 import AUCA.Util
 \end{code}
 
@@ -76,7 +78,7 @@ eventHandler comset fp inotify ev = case ev of
 
 \begin{code}
 addWD :: INotify -> FilePath -> (Event -> IO ()) -> IO WatchDescriptor
-addWD inotify fp evHandler = addWatch inotify evs fp evHandler
+addWD inotify fp evHandler = addWatch inotify evs (B.pack fp) evHandler
 	where
 	evs = [Attrib, Modify, DeleteSelf]
 \end{code}
